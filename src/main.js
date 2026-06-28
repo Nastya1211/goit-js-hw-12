@@ -11,7 +11,7 @@ import {
   hideLoadMoreButton,
 } from './js/render-functions.js';
 
-const searchForm = document.querySelector('.search-form');
+const searchForm = document.querySelector('.form');
 const loadMoreBtn = document.querySelector('.load-more-btn');
 
 let searchQuery = '';
@@ -50,6 +50,7 @@ async function handleSearch(event) {
           'Sorry, there are no images matching your search query. Please try again!',
         position: 'topRight',
       });
+      hideLoader();
       return;
     }
 
@@ -78,10 +79,11 @@ async function handleLoadMore() {
   try {
     const data = await getImagesByQuery(searchQuery, page);
     createGallery(data.hits);
+
     smoothScroll();
 
-    // Перевірка на кінець колекції
     const totalPages = Math.ceil(data.totalHits / perPage);
+
     if (page >= totalPages) {
       iziToast.info({
         title: 'End',
@@ -97,6 +99,7 @@ async function handleLoadMore() {
       message: 'Failed to fetch more images.',
       position: 'topRight',
     });
+    showLoadMoreButton();
   } finally {
     hideLoader();
   }
