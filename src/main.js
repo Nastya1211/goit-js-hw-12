@@ -37,7 +37,7 @@ async function handleSearch(event) {
   }
 
   clearGallery();
-  hideLoadMoreButton();
+  hideLoadMoreButton(); // Обов'язково ховаємо кнопку при новому пошуку
   showLoader();
 
   try {
@@ -50,13 +50,24 @@ async function handleSearch(event) {
           'Sorry, there are no images matching your search query. Please try again!',
         position: 'topRight',
       });
-      hideLoader();
       return;
     }
 
     createGallery(data.hits);
 
-    if (data.totalHits > perPage) {
+    // Розраховуємо загальну кількість сторінок
+    const totalPages = Math.ceil(data.totalHits / perPage);
+
+    // ПУНКТ 1: Якщо результати знайшлися, але вони всі вміщуються на 1-шу сторінку
+    if (page >= totalPages) {
+      hideLoadMoreButton(); // Перестраховка: ховаємо кнопку
+      iziToast.info({
+        title: 'End',
+        message: "We're sorry, but you've reached the end of search results.",
+        position: 'topRight',
+      });
+    } else {
+      // Якщо є наступні сторінки — показуємо кнопку
       showLoadMoreButton();
     }
   } catch (error) {
@@ -73,25 +84,26 @@ async function handleSearch(event) {
 
 async function handleLoadMore() {
   page += 1;
-  hideLoadMoreButton();
+  hideLoadMoreButton(); // Ховаємо кнопку на час завантаження
   showLoader();
 
   try {
     const data = await getImagesByQuery(searchQuery, page);
     createGallery(data.hits);
-
     smoothScroll();
 
     const totalPages = Math.ceil(data.totalHits / perPage);
 
+    // ПУНКТ 2: Перевірка при досягненні останньої сторінки через "Load more"
     if (page >= totalPages) {
+      hideLoadMoreButton(); // 👈 КРИТИЧНО: Явно ховаємо кнопку, щоб вона не висіла!
       iziToast.info({
         title: 'End',
         message: "We're sorry, but you've reached the end of search results.",
         position: 'topRight',
       });
     } else {
-      showLoadMoreButton();
+      showLoadMoreButton(); // Якщо сторінки ще є, повертаємо кнопку назад
     }
   } catch (error) {
     iziToast.error({
@@ -99,7 +111,7 @@ async function handleLoadMore() {
       message: 'Failed to fetch more images.',
       position: 'topRight',
     });
-    showLoadMoreButton();
+    showLoadMoreButton(); // Якщо впала помилка мережі, даємо шанс натиснути ще раз
   } finally {
     hideLoader();
   }
